@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Library Manager</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2>Media Library</h2>
+            
+            <div class="sidebar-section">
+                <h3>Navigation</h3>
+                <button class="nav-btn active" data-view="browse">
+                    📁 Browse Files
+                </button>
+                <button class="nav-btn" data-view="favorites">
+                    ⭐ Favorites
+                </button>
+                <button class="nav-btn" data-view="ratings">
+                    ⭐ All Ratings
+                </button>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3>Folders</h3>
+                <button id="select-folders-btn" class="action-btn">Select Folders</button>
+                <div id="folders-list" class="folders-list"></div>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3>Lists</h3>
+                <button id="create-list-btn" class="action-btn">Create List</button>
+                <div id="lists-container" class="lists-container"></div>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3>Actions</h3>
+                <button id="random-file-btn" class="action-btn">🎲 Random File</button>
+                <button id="export-ratings-btn" class="action-btn">📊 Export Ratings</button>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Search & Controls -->
+            <div class="controls-bar">
+                <input type="text" id="search-input" placeholder="Search files..." class="search-input">
+                <div class="view-controls">
+                    <span id="file-count">0 files</span>
+                    <button id="refresh-btn" class="icon-btn">🔄</button>
+                </div>
+            </div>
+            
+            <!-- File Grid -->
+            <div id="file-grid" class="file-grid">
+                <!-- Files will be loaded here -->
+            </div>
+            
+            <!-- Pagination -->
+            <div class="pagination">
+                <button id="prev-page" class="page-btn">← Previous</button>
+                <span id="page-info">Page 1 of 1</span>
+                <button id="next-page" class="page-btn">Next →</button>
+            </div>
+        </main>
+        
+        <!-- Preview Area -->
+        <section class="preview-area">
+            <div class="tabs-container">
+                <div id="tabs" class="tabs"></div>
+                <button id="close-all-tabs" class="close-all-btn">✕ Close All</button>
+            </div>
+            
+            <div id="preview-content" class="preview-content">
+                <div class="empty-state">
+                    <p>Click on a file to preview</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Info Panel -->
+        <aside class="info-panel">
+            <h3>File Info</h3>
+            <div id="file-info" class="file-info">
+                <p class="info-placeholder">Select a file to view details</p>
+            </div>
+            
+            <div class="rating-section">
+                <h3>Rating</h3>
+                <div class="rating-input">
+                    <input type="range" id="rating-slider" min="1" max="100" value="50" disabled>
+                    <span id="rating-value">-</span>
+                </div>
+                <button id="save-rating-btn" class="action-btn" disabled>Save Rating</button>
+            </div>
+            
+            <div class="lists-section">
+                <h3>Add to List</h3>
+                <select id="list-select" class="list-select" disabled>
+                    <option value="">Select a list...</option>
+                </select>
+                <button id="add-to-list-btn" class="action-btn" disabled>Add to List</button>
+            </div>
+            
+            <div class="actions-section">
+                <button id="favorite-btn" class="action-btn" disabled>⭐ Favorite</button>
+            </div>
+        </aside>
+    </div>
+    
+    <!-- Modals -->
+    <div id="folder-modal" class="modal">
+        <div class="modal-content">
+            <h2>Select Folders</h2>
+            <p>Enter folder paths (one per line):</p>
+            <textarea id="folder-input" rows="10" placeholder="/path/to/folder1&#10;/path/to/folder2"></textarea>
+            <div class="modal-actions">
+                <button id="save-folders-btn" class="action-btn">Save</button>
+                <button id="cancel-folders-btn" class="action-btn secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="list-modal" class="modal">
+        <div class="modal-content">
+            <h2>Create List</h2>
+            <input type="text" id="list-name-input" placeholder="List name" class="text-input">
+            <div class="modal-actions">
+                <button id="save-list-btn" class="action-btn">Create</button>
+                <button id="cancel-list-btn" class="action-btn secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
