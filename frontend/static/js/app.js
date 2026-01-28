@@ -362,12 +362,12 @@ function renderPreview(metadata) {
     if (metadata.type && metadata.type.startsWith('video/')) {
         container.innerHTML = `
             <video controls autoplay>
-                <source src="file://${metadata.path}" type="${metadata.type}">
+                <source src="/api/file/serve?path=${encodeURIComponent(metadata.path)}" type="${metadata.type}">
                 Your browser does not support the video tag.
             </video>
         `;
     } else if (metadata.type && metadata.type.startsWith('image/')) {
-        container.innerHTML = `<img src="file://${metadata.path}" alt="${metadata.name}">`;
+        container.innerHTML = `<img src="/api/file/serve?path=${encodeURIComponent(metadata.path)}" alt="${metadata.name}">`;
     } else {
         container.innerHTML = '<div class="empty-state"><p>Preview not available</p></div>';
     }
@@ -438,7 +438,7 @@ async function loadFileRating(filePath) {
     try {
         // Get parent folder
         const folder = filePath.substring(0, filePath.lastIndexOf('/'));
-        const data = await apiCall(`/ratings/${encodeURIComponent(folder)}`);
+        const data = await apiCall(`/ratings?folder=${encodeURIComponent(folder)}`);
         
         const rating = data.ratings.find(r => r.file === filePath);
         if (rating) {
@@ -461,7 +461,7 @@ async function saveRating() {
     const folder = state.selectedFile.path.substring(0, state.selectedFile.path.lastIndexOf('/'));
     
     try {
-        await apiCall(`/ratings/${encodeURIComponent(folder)}`, 'POST', {
+        await apiCall(`/ratings?folder=${encodeURIComponent(folder)}`, 'POST', {
             file: state.selectedFile.path,
             rating
         });

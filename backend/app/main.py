@@ -186,6 +186,16 @@ async def get_file_metadata_endpoint(path: str):
         raise HTTPException(status_code=404, detail="File not found")
     return metadata
 
+@app.get("/api/file/serve")
+async def serve_file(path: str):
+    """Serve a file directly."""
+    file_path = Path(path)
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    mime_type, _ = mimetypes.guess_type(path)
+    return FileResponse(path, media_type=mime_type)
+
 @app.get("/api/file/preview")
 async def get_file_preview(path: str):
     """Get file preview/thumbnail."""
@@ -278,8 +288,8 @@ async def get_list_files(list_id: str):
     
     return {"files": files, "list_name": data.get("name")}
 
-@app.get("/api/ratings/{folder}")
-async def get_ratings(folder: str):
+@app.get("/api/ratings")
+async def get_ratings(folder: str = Query(...)):
     """Get ratings for a folder."""
     folder_hash = get_folder_hash(folder)
     rating_file = RATINGS_DIR / f"{folder_hash}.json"
@@ -292,9 +302,12 @@ async def get_ratings(folder: str):
     
     return data
 
-@app.post("/api/ratings/{folder}")
-async def set_rating(folder: str, rating_data: RatingSet):
+@app.post("/api/ratings")
+async def set_rating(folder: str = Query(...), rating_data: RatingSet = None):
     """Set rating for a file in a folder."""
+    if not rating_data:
+        raise HTTPException(status_code=400, detail="Rating data required")
+    
     if not 1 <= rating_data.rating <= 100:
         raise HTTPException(status_code=400, detail="Rating must be between 1 and 100")
     
@@ -429,8 +442,8 @@ async def export_list(list_id: str):
     data = load_json_file(list_file)
     return JSONResponse(content=data)
 
-@app.post("/api/export/ratings/{folder}")
-async def export_ratings(folder: str):
+@app.post("/api/export/ratings")
+async def export_ratings(folder: str = Query(...)):
     """Export ratings for a folder."""
     folder_hash = get_folder_hash(folder)
     rating_file = RATINGS_DIR / f"{folder_hash}.json"
