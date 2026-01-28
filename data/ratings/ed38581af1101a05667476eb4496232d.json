@@ -1,0 +1,16 @@
+{
+  "folder": "/tmp/test-media/images",
+  "folder_hash": "ed38581af1101a05667476eb4496232d",
+  "ratings": [
+    {
+      "file": "/tmp/test-media/images/test_image_3.jpg",
+      "rating": 92,
+      "rated_at": "2026-01-28T04:30:39.602193"
+    },
+    {
+      "file": "/tmp/test-media/images/test_image_1.jpg",
+      "rating": 85,
+      "rated_at": "2026-01-28T04:30:39.603098"
+    }
+  ]
+}
