@@ -14,6 +14,14 @@ from PIL import Image
 import io
 import base64
 
+# Supported file extensions
+VIDEO_EXTENSIONS = {'.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv', '.m4v'}
+IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'}
+SUPPORTED_EXTENSIONS = VIDEO_EXTENSIONS | IMAGE_EXTENSIONS
+
+# Thumbnail size
+THUMBNAIL_SIZE = (300, 300)
+
 app = FastAPI(title="Media Library Manager")
 
 # CORS configuration
@@ -54,6 +62,22 @@ class RatingSet(BaseModel):
     rating: int
 
 # Helper functions
+def validate_file_path(file_path: str, allowed_folders: List[str]) -> bool:
+    """Validate that a file path is within allowed folders to prevent path traversal attacks."""
+    try:
+        file_path = Path(file_path).resolve()
+        for folder in allowed_folders:
+            folder_path = Path(folder).resolve()
+            try:
+                # Check if the file path is relative to the allowed folder
+                file_path.relative_to(folder_path)
+                return True
+            except ValueError:
+                continue
+        return False
+    except Exception:
+        return False
+
 def get_folder_hash(folder_path: str) -> str:
     """Generate a hash for a folder path."""
     return hashlib.md5(folder_path.encode()).hexdigest()
@@ -95,17 +119,14 @@ def get_file_metadata(file_path: str) -> Dict[str, Any]:
                 metadata["width"] = img.width
                 metadata["height"] = img.height
                 metadata["resolution"] = f"{img.width}x{img.height}"
-        except:
-            pass
+        except Exception as e:
+            # Log error but don't expose details
+            print(f"Error reading image metadata: {e}")
     
     return metadata
 
 def get_files_from_folders(folders: List[str], search: Optional[str] = None) -> List[Dict[str, Any]]:
     """Get all media files from specified folders."""
-    video_extensions = {'.mp4', '.mov', '.avi', '.mkv', '.webm', '.flv', '.wmv', '.m4v'}
-    image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'}
-    supported_extensions = video_extensions | image_extensions
-    
     files = []
     for folder in folders:
         folder_path = Path(folder)
@@ -113,7 +134,7 @@ def get_files_from_folders(folders: List[str], search: Optional[str] = None) -> 
             continue
         
         for file_path in folder_path.rglob('*'):
-            if file_path.is_file() and file_path.suffix.lower() in supported_extensions:
+            if file_path.is_file() and file_path.suffix.lower() in SUPPORTED_EXTENSIONS:
                 if search and search.lower() not in file_path.name.lower():
                     continue
                 
@@ -181,6 +202,14 @@ async def get_files(
 @app.get("/api/file/metadata")
 async def get_file_metadata_endpoint(path: str):
     """Get file metadata."""
+    # Get allowed folders for validation
+    folders_data = load_json_file(CONFIG_DIR / "folders.json", {"folders": []})
+    allowed_folders = folders_data.get("folders", [])
+    
+    # Validate file path
+    if not validate_file_path(path, allowed_folders):
+        raise HTTPException(status_code=403, detail="Access denied: file not in allowed folders")
+    
     metadata = get_file_metadata(path)
     if not metadata:
         raise HTTPException(status_code=404, detail="File not found")
@@ -189,6 +218,14 @@ async def get_file_metadata_endpoint(path: str):
 @app.get("/api/file/serve")
 async def serve_file(path: str):
     """Serve a file directly."""
+    # Get allowed folders for validation
+    folders_data = load_json_file(CONFIG_DIR / "folders.json", {"folders": []})
+    allowed_folders = folders_data.get("folders", [])
+    
+    # Validate file path
+    if not validate_file_path(path, allowed_folders):
+        raise HTTPException(status_code=403, detail="Access denied: file not in allowed folders")
+    
     file_path = Path(path)
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
@@ -199,6 +236,14 @@ async def serve_file(path: str):
 @app.get("/api/file/preview")
 async def get_file_preview(path: str):
     """Get file preview/thumbnail."""
+    # Get allowed folders for validation
+    folders_data = load_json_file(CONFIG_DIR / "folders.json", {"folders": []})
+    allowed_folders = folders_data.get("folders", [])
+    
+    # Validate file path
+    if not validate_file_path(path, allowed_folders):
+        raise HTTPException(status_code=403, detail="Access denied: file not in allowed folders")
+    
     file_path = Path(path)
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
@@ -209,14 +254,15 @@ async def get_file_preview(path: str):
     if mime_type and mime_type.startswith('image/'):
         try:
             with Image.open(file_path) as img:
-                img.thumbnail((300, 300))
+                img.thumbnail(THUMBNAIL_SIZE)
                 buffer = io.BytesIO()
                 img.save(buffer, format='JPEG')
                 buffer.seek(0)
                 img_data = base64.b64encode(buffer.getvalue()).decode()
                 return {"preview": f"data:image/jpeg;base64,{img_data}"}
-        except:
-            pass
+        except Exception as e:
+            # Log error but don't expose details to client
+            print(f"Error generating thumbnail: {e}")
     
     # For videos, return file path for video player
     if mime_type and mime_type.startswith('video/'):
@@ -372,10 +418,11 @@ async def get_all_ratings(
     reverse = (sort == "desc")
     all_ratings.sort(key=lambda x: x["rating"], reverse=reverse)
     
-    # Calculate stats
+    # Calculate stats with 10 buckets (1-10, 11-20, ... 91-100)
     ratings_list = [r["rating"] for r in all_ratings]
     distribution = {}
     for i in range(1, 11):
+        # Each bucket represents a range of 10 ratings
         distribution[str(i)] = sum(1 for r in ratings_list if i*10-9 <= r <= i*10)
     
     stats = {

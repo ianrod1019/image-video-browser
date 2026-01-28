@@ -1,3 +1,8 @@
+// Constants
+const SEARCH_DEBOUNCE_MS = 300;
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v'];
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+
 // Global state
 let state = {
     currentView: 'browse',
@@ -225,11 +230,9 @@ function getFileIcon(type) {
 
 function getFileIconFromPath(path) {
     const ext = path.split('.').pop().toLowerCase();
-    const videoExts = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v'];
-    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
     
-    if (videoExts.includes(ext)) return '🎬';
-    if (imageExts.includes(ext)) return '🖼️';
+    if (VIDEO_EXTENSIONS.includes(ext)) return '🎬';
+    if (IMAGE_EXTENSIONS.includes(ext)) return '🖼️';
     return '📄';
 }
 
@@ -361,7 +364,7 @@ function renderPreview(metadata) {
     
     if (metadata.type && metadata.type.startsWith('video/')) {
         container.innerHTML = `
-            <video controls autoplay>
+            <video controls>
                 <source src="/api/file/serve?path=${encodeURIComponent(metadata.path)}" type="${metadata.type}">
                 Your browser does not support the video tag.
             </video>
@@ -467,10 +470,11 @@ async function saveRating() {
         });
         
         document.getElementById('rating-value').textContent = rating;
-        alert('Rating saved!');
+        console.log(`Rating ${rating} saved for ${state.selectedFile.name}`);
+        alert(`Rating ${rating} saved for ${state.selectedFile.name}!`);
     } catch (error) {
         console.error('Failed to save rating:', error);
-        alert('Failed to save rating');
+        alert(`Failed to save rating: ${error.message || 'Unknown error'}`);
     }
 }
 
@@ -645,7 +649,7 @@ function setupEventListeners() {
             state.searchQuery = e.target.value;
             state.currentPage = 1;
             loadFiles();
-        }, 300);
+        }, SEARCH_DEBOUNCE_MS);
     });
     
     // Pagination

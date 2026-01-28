@@ -102,6 +102,18 @@ The application follows a clean architecture:
 - `frontend/static/css/style.css` - Dark blue themed styling
 - `frontend/static/js/app.js` - Frontend application logic
 
+### Security Considerations
+
+**Important**: This MVP does not include authentication or authorization. The application should only be run in trusted environments (localhost or private networks). For production use, consider adding:
+
+- User authentication and authorization
+- Access control for file operations
+- HTTPS/TLS encryption
+- Rate limiting
+- Input sanitization
+
+The current implementation includes path traversal protection to ensure files can only be accessed from configured folders.
+
 ## API Endpoints
 
 See the FastAPI documentation at `http://localhost:8000/docs` when the server is running.
